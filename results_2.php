@@ -65,17 +65,13 @@ if ($sr) {
 }
 
 $result = $conn->query("SELECT * FROM candidates ORDER BY office_name ASC, interview_date ASC, id ASC");
-
 $groupedCandidates = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $office = !empty($row['office_name']) ? strtoupper(trim($row['office_name'])) : 'REGIONAL OFFICE';
         $position = canonical_position_title((string)($row['position_title'] ?? 'LMO I'));
-
         if (!isset($groupedCandidates[$office])) $groupedCandidates[$office] = [];
-
         $id = (int)$row['id'];
-
         $legacyP = []; $legacyT = [];
         foreach (['core_avg', 'org_avg', 'psycho_extra1', 'psycho_extra2', 'psycho_extra3', 'psycho_extra4'] as $col) {
             $legacyP[] = isset($row[$col]) && $row[$col] !== null ? (float)$row[$col] : null;
@@ -85,41 +81,32 @@ if ($result && $result->num_rows > 0) {
         }
         $customCompetencies = json_decode((string)($row['custom_competencies_json'] ?? '[]'), true);
         if (!is_array($customCompetencies)) $customCompetencies = [];
-
         $groupedCandidates[$office][] = [
-            'id'       => $id,
-            'name'     => $row['candidate_name'],
+            'id' => $id,
+            'name' => $row['candidate_name'],
             'position' => $position,
-            'office'   => $office,
-            'date'     => !empty($row['interview_date']) ? $row['interview_date'] : date('F d, Y'),
-            'remarks'  => $row['remarks'] ?? '',
-            'scores'   => isset($scoreMap[$id]) ? $scoreMap[$id] : [],
+            'office' => $office,
+            'date' => !empty($row['interview_date']) ? $row['interview_date'] : date('F d, Y'),
+            'scores' => isset($scoreMap[$id]) ? $scoreMap[$id] : [],
             'customCompetencies' => $customCompetencies,
-            '_legacy'  => ['p' => $legacyP, 't' => $legacyT],
+            '_legacy' => ['p' => $legacyP, 't' => $legacyT],
         ];
     }
 }
 
 $defaultOffices = ['REGIONAL OFFICE', 'PENRO ILOILO', 'PENRO CAPIZ', 'PENRO AKLAN', 'PENRO ANTIQUE', 'PENRO GUIMARAS', 'PENRO NEGROS OCCIDENTAL'];
-
 $orderedOffices = [];
-foreach ($defaultOffices as $defOffice) {
-    $orderedOffices[$defOffice] = $groupedCandidates[$defOffice] ?? [];
-}
+foreach ($defaultOffices as $defOffice) $orderedOffices[$defOffice] = $groupedCandidates[$defOffice] ?? [];
 foreach ($groupedCandidates as $office => $list) {
     if (!isset($orderedOffices[$office])) $orderedOffices[$office] = $list;
 }
 $groupedCandidates = $orderedOffices;
-
 foreach (array_keys($storedOrders) as $storedOffice) {
     if (!isset($groupedCandidates[$storedOffice])) $groupedCandidates[$storedOffice] = [];
 }
-
 try {
     foreach (removed_tab_list($conn) as $removedOffice) {
-        if (isset($groupedCandidates[$removedOffice]) && count($groupedCandidates[$removedOffice]) === 0) {
-            unset($groupedCandidates[$removedOffice]);
-        }
+        if (isset($groupedCandidates[$removedOffice]) && count($groupedCandidates[$removedOffice]) === 0) unset($groupedCandidates[$removedOffice]);
     }
 } catch (Exception $e) {
     error_log('results_2 removed tabs load error: ' . $e->getMessage());
@@ -129,33 +116,31 @@ $headerLabels = [
     'hash' => 'NO.', 'name' => 'NAME OF APPLICANT / CANDIDATE', 'psychoGroup' => 'PSYCHO-SOCIAL ATTRIBUTES', 'potentialGroup' => 'POTENTIAL ATTRIBUTES',
     'core' => 'CORE', 'org' => 'ORG', 'psychoExtra1' => 'R1', 'psychoExtra2' => 'R2', 'psychoExtra3' => 'R3', 'psychoExtra4' => 'R4',
     'psychoAve' => 'AVE.', 'func' => 'FUNC', 'lead' => 'LEAD',
-    'potentialExtra1' => 'R1', 'potentialExtra2' => 'R2', 'potentialExtra3' => 'R3', 'potentialExtra4' => 'R4', 'potentialAve' => 'AVE.', 'remarks' => 'REMARKS'
+    'potentialExtra1' => 'R1', 'potentialExtra2' => 'R2', 'potentialExtra3' => 'R3', 'potentialExtra4' => 'R4', 'potentialAve' => 'AVE.'
 ];
-
 try {
     $settingsResult = $conn->query("SELECT * FROM sheet_settings WHERE id = 1 LIMIT 1");
     $settingsRow = $settingsResult ? $settingsResult->fetch_assoc() : null;
     if ($settingsRow) {
         $headerLabels = [
-            'hash'            => $settingsRow['hdr_hash'] ?? 'NO.',
-            'name'            => $settingsRow['hdr_name'] ?? 'NAME OF APPLICANT / CANDIDATE',
-            'psychoGroup'     => $settingsRow['hdr_psycho_group'] ?? 'PSYCHO-SOCIAL ATTRIBUTES',
-            'potentialGroup'  => $settingsRow['hdr_potential_group'] ?? 'POTENTIAL ATTRIBUTES',
-            'core'            => $settingsRow['hdr_core'] ?? 'CORE',
-            'org'             => $settingsRow['hdr_org'] ?? 'ORG',
-            'psychoExtra1'    => $settingsRow['hdr_psycho_extra1'] ?? 'R1',
-            'psychoExtra2'    => $settingsRow['hdr_psycho_extra2'] ?? 'R2',
-            'psychoExtra3'    => $settingsRow['hdr_psycho_extra3'] ?? 'R3',
-            'psychoExtra4'    => $settingsRow['hdr_psycho_extra4'] ?? 'R4',
-            'psychoAve'       => $settingsRow['hdr_psycho_ave'] ?? 'AVE.',
-            'func'            => $settingsRow['hdr_func'] ?? 'FUNC',
-            'lead'            => $settingsRow['hdr_lead'] ?? 'LEAD',
+            'hash' => $settingsRow['hdr_hash'] ?? 'NO.',
+            'name' => $settingsRow['hdr_name'] ?? 'NAME OF APPLICANT / CANDIDATE',
+            'psychoGroup' => $settingsRow['hdr_psycho_group'] ?? 'PSYCHO-SOCIAL ATTRIBUTES',
+            'potentialGroup' => $settingsRow['hdr_potential_group'] ?? 'POTENTIAL ATTRIBUTES',
+            'core' => $settingsRow['hdr_core'] ?? 'CORE',
+            'org' => $settingsRow['hdr_org'] ?? 'ORG',
+            'psychoExtra1' => $settingsRow['hdr_psycho_extra1'] ?? 'R1',
+            'psychoExtra2' => $settingsRow['hdr_psycho_extra2'] ?? 'R2',
+            'psychoExtra3' => $settingsRow['hdr_psycho_extra3'] ?? 'R3',
+            'psychoExtra4' => $settingsRow['hdr_psycho_extra4'] ?? 'R4',
+            'psychoAve' => $settingsRow['hdr_psycho_ave'] ?? 'AVE.',
+            'func' => $settingsRow['hdr_func'] ?? 'FUNC',
+            'lead' => $settingsRow['hdr_lead'] ?? 'LEAD',
             'potentialExtra1' => $settingsRow['hdr_potential_extra1'] ?? 'R1',
             'potentialExtra2' => $settingsRow['hdr_potential_extra2'] ?? 'R2',
             'potentialExtra3' => $settingsRow['hdr_potential_extra3'] ?? 'R3',
             'potentialExtra4' => $settingsRow['hdr_potential_extra4'] ?? 'R4',
-            'potentialAve'    => $settingsRow['hdr_potential_ave'] ?? 'AVE.',
-            'remarks'         => $settingsRow['hdr_remarks'] ?? 'REMARKS',
+            'potentialAve' => $settingsRow['hdr_potential_ave'] ?? 'AVE.',
         ];
     }
 } catch (Exception $e) {}
@@ -163,31 +148,28 @@ try {
 function normalize_rater(string $label): ?string {
     $trimmed = trim($label);
     if ($trimmed === '') return null;
-    $known = rater_list();
-    $upperCompact = preg_replace('/[\s\-_]+/', '', strtoupper($trimmed));
-    foreach ($known as $r) {
-        if (preg_replace('/[\s\-_]+/', '', strtoupper($r)) === $upperCompact) return $r;
+    foreach (rater_list() as $rater) {
+        if (preg_replace('/[\s\-_]+/', '', strtoupper($rater)) === preg_replace('/[\s\-_]+/', '', strtoupper($trimmed))) return $rater;
     }
     return preg_replace('/\s+/', ' ', strtoupper($trimmed));
 }
 
 $legacyPLabels = [$headerLabels['core'], $headerLabels['org'], $headerLabels['psychoExtra1'], $headerLabels['psychoExtra2'], $headerLabels['psychoExtra3'], $headerLabels['psychoExtra4']];
 $legacyTLabels = [$headerLabels['func'], $headerLabels['lead'], $headerLabels['potentialExtra1'], $headerLabels['potentialExtra2'], $headerLabels['potentialExtra3'], $headerLabels['potentialExtra4']];
-
 foreach ($groupedCandidates as $officeKey => $list) {
-    foreach ($list as $i => $cand) {
-        if (empty($cand['scores'])) {
-            $sc = [];
-            for ($k = 0; $k < 6; $k++) {
-                $rp = normalize_rater((string)$legacyPLabels[$k]);
-                $rt = normalize_rater((string)$legacyTLabels[$k]);
-                if ($rp !== null && $cand['_legacy']['p'][$k] !== null) $sc[$rp]['p'] = $cand['_legacy']['p'][$k];
-                if ($rt !== null && $cand['_legacy']['t'][$k] !== null) $sc[$rt]['t'] = $cand['_legacy']['t'][$k];
+    foreach ($list as $i => $candidate) {
+        if (empty($candidate['scores'])) {
+            $scores = [];
+            for ($index = 0; $index < 6; $index++) {
+                $psychoRater = normalize_rater((string)$legacyPLabels[$index]);
+                $potentialRater = normalize_rater((string)$legacyTLabels[$index]);
+                if ($psychoRater !== null && $candidate['_legacy']['p'][$index] !== null) $scores[$psychoRater]['p'] = $candidate['_legacy']['p'][$index];
+                if ($potentialRater !== null && $candidate['_legacy']['t'][$index] !== null) $scores[$potentialRater]['t'] = $candidate['_legacy']['t'][$index];
             }
-            foreach ($sc as $r => $v) {
-                $sc[$r] = ['p' => $v['p'] ?? null, 't' => $v['t'] ?? null];
+            foreach ($scores as $rater => $score) {
+                $scores[$rater] = ['p' => $score['p'] ?? null, 't' => $score['t'] ?? null];
             }
-            $groupedCandidates[$officeKey][$i]['scores'] = $sc;
+            $groupedCandidates[$officeKey][$i]['scores'] = $scores;
         }
         unset($groupedCandidates[$officeKey][$i]['_legacy']);
     }
@@ -243,7 +225,6 @@ foreach ($groupedCandidates as $officeKey => $list) {
         .rater-remove:hover { opacity: 1; }
         .rater-add { display: none; }
         .text-left { text-align: left !important; padding-left: 8px !important; }
-        .remarks-cell { min-width: 140px; text-align: left; }
         th[contenteditable="true"], td[contenteditable="true"] { outline: none; cursor: cell; }
         th[contenteditable="true"]:focus, td[contenteditable="true"]:focus { outline: 2px solid #107c41 !important; background-color: #e8f5e9 !important; }
         .row-num-cell { background-color: #f2f2f2; font-weight: bold; width: 30px; cursor: pointer; }
@@ -312,11 +293,13 @@ foreach ($groupedCandidates as $officeKey => $list) {
     <div class="action-bar no-print">
         <div class="action-group">
             <button type="button" class="btn btn-primary" onclick="saveWholeTable(event)">💾 Save All Changes</button>
+            <button type="button" class="btn" id="importExcelButton">Import Excel</button>
+            <input type="file" id="excelImportFile" accept=".xlsx,.xls,.csv" hidden>
+            <button type="button" class="btn" id="exportExcelButton">Export Excel</button>
             <button type="button" class="btn" onclick="deleteCompetency()">Delete Competency</button>
             <button type="button" class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
         </div>
         <div class="action-group">
-            <a href="sheets.php" class="btn">Scoring Sheets</a>
             <a href="template_manager.php" class="btn">Competency Templates</a>
             <a href="template_seed.php" class="btn">Generate Position Sheets</a>
             <a href="positions_import.php" class="btn">Import Positions</a>
@@ -324,7 +307,6 @@ foreach ($groupedCandidates as $officeKey => $list) {
         <div class="action-group action-group-admin">
             <a href="manage_users.php" class="btn">👥 Manage Users</a>
             <a href="audit_viewer.php" class="btn">Score Audit</a>
-            <a href="bulk_users.php" class="btn">Bulk Users</a>
         </div>
         <div class="action-group action-group-logout">
             <a href="logout.php" class="btn" style="background-color: #dc3545; color: white; border-color: #dc3545;">🚪 Logout</a>
@@ -332,6 +314,18 @@ foreach ($groupedCandidates as $officeKey => $list) {
     </div>
 </form>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="results_excel_export.js?v=<?php echo (int)filemtime(__DIR__ . '/results_excel_export.js'); ?>"></script>
+<script>
+    <?php
+    $excelImportModule = __DIR__ . '/results_excel_import.js';
+    if (is_readable($excelImportModule)) {
+        readfile($excelImportModule);
+    } else {
+        echo 'window.ResultsExcelImportLoadError = "The results_excel_import.js file is missing or unreadable on the server.";';
+    }
+    ?>
+</script>
 <script>
     const groupedData = <?php echo json_encode($groupedCandidates, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     let headerLabels = <?php echo json_encode($headerLabels, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -353,28 +347,25 @@ foreach ($groupedCandidates as $officeKey => $list) {
     }
 
     function calculateAverage(...scores) {
-        const validScores = scores.filter(s => s !== null && !isNaN(s) && s !== '' && s !== undefined);
-        if (validScores.length === 0) return "#DIV/0!";
-        const sum = validScores.reduce((acc, val) => acc + parseFloat(val), 0);
-        return (sum / validScores.length).toFixed(2);
+        const validScores = scores.filter(score => score !== null && !isNaN(score) && score !== '' && score !== undefined);
+        if (!validScores.length) return '#DIV/0!';
+        return (validScores.reduce((total, score) => total + parseFloat(score), 0) / validScores.length).toFixed(2);
     }
 
-    function formatVal(val) {
-        if (val === null || val === undefined || isNaN(val) || val === '') return '';
-        return Number(val).toFixed(2);
+    function formatVal(value) {
+        if (value === null || value === undefined || isNaN(value) || value === '') return '';
+        return Number(value).toFixed(2);
     }
 
     async function deleteCompetency() {
         const competencies = new Map();
         TEMPLATE_CUSTOM_COMPETENCIES.forEach(item => competencies.set(item.sectionId + '|' + item.competencyId, item));
         Object.values(groupedData).flat().forEach(candidate => {
-            (candidate.customCompetencies || []).forEach(section => {
-                (section.rows || []).forEach(row => {
-                    if (!section.id || !row.id) return;
-                    const key = section.id + '|' + row.id;
-                    if (!competencies.has(key)) competencies.set(key, { sectionId: section.id, competencyId: row.id, label: (section.label || 'Untitled section') + ' — ' + (row.title || 'Untitled competency') });
-                });
-            });
+            (candidate.customCompetencies || []).forEach(section => (section.rows || []).forEach(row => {
+                if (!section.id || !row.id) return;
+                const key = section.id + '|' + row.id;
+                if (!competencies.has(key)) competencies.set(key, { sectionId: section.id, competencyId: row.id, label: (section.label || 'Untitled section') + ' — ' + (row.title || 'Untitled competency') });
+            }));
         });
         const options = Array.from(competencies.values());
         if (options.length === 0) return alert('There are no custom competencies in the saved candidate records.');
@@ -385,13 +376,8 @@ foreach ($groupedCandidates as $officeKey => $list) {
         if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= options.length) return alert('Choose a valid competency number.');
         const selected = options[selectedIndex];
         if (!confirm(`Permanently delete "${selected.label}" from all candidate records and matching templates?`)) return;
-
         try {
-            const response = await fetch('delete_competency.php', {
-                method: 'POST',
-                credentials: 'same-origin',
-                body: new URLSearchParams({ section_id: selected.sectionId, competency_id: selected.competencyId, csrf_token: CSRF_TOKEN })
-            });
+            const response = await fetch('delete_competency.php', { method: 'POST', credentials: 'same-origin', body: new URLSearchParams({ section_id: selected.sectionId, competency_id: selected.competencyId, csrf_token: CSRF_TOKEN }) });
             const data = await response.json();
             if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Unknown error');
             Object.values(groupedData).flat().forEach(candidate => {
@@ -403,87 +389,80 @@ foreach ($groupedCandidates as $officeKey => $list) {
         } catch (error) { alert('Delete failed - the competency was NOT deleted.\\n' + error.message); }
     }
 
-    function updateHeaderLabel(el, key) { headerLabels[key] = el.innerText.replace(/[\r\n\t]/g, '').trim(); renderAll(); }
+    function updateHeaderLabel(element, key) { headerLabels[key] = element.innerText.replace(/[\r\n\t]/g, '').trim(); renderAll(); }
     function blockKey(office, position, date) { return office + '|' + position + '|' + date; }
 
-    function raterColumns(cands, key, office, position) {
+    function raterColumns(candidates, key, office, position) {
         const stored = ((storedOrders[office] || {})[position]) || [];
-        const added = addedRaters[key] || [];
         const ordered = [];
-        stored.concat(added).forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
+        stored.concat(addedRaters[key] || []).forEach(rater => { if (!ordered.includes(rater)) ordered.push(rater); });
         const scored = new Set();
-        cands.forEach(c => Object.keys(c.scores || {}).forEach(r => scored.add(r)));
-        const rest = Array.from(scored).filter(r => !ordered.includes(r));
-        const known = RATERS.filter(r => rest.includes(r));
-        const other = rest.filter(r => !RATERS.includes(r));
-        return ordered.concat(known, other);
+        candidates.forEach(candidate => Object.keys(candidate.scores || {}).forEach(rater => scored.add(rater)));
+        const rest = Array.from(scored).filter(rater => !ordered.includes(rater));
+        return ordered.concat(RATERS.filter(rater => rest.includes(rater)), rest.filter(rater => !RATERS.includes(rater)));
     }
 
-    function buildRowHtml(cand = null, rowNumber = 1, cols = [], slots = MIN_SLOTS) {
-        const id = cand ? cand.id : '';
-        const name = cand ? escapeHtml(cand.name) : '';
-        const remarks = cand ? escapeHtml(cand.remarks) : '';
-        let pCells = '', tCells = '';
-        const pVals = [], tVals = [];
-        for (let i = 0; i < slots; i++) {
-            const r = cols[i];
-            if (r) {
-                const sc = (cand && cand.scores && cand.scores[r]) || {};
-                pVals.push(sc.p); tVals.push(sc.t);
-                pCells += `<td contenteditable="true" data-kind="p" data-rater="${escapeHtml(r)}">${formatVal(sc.p)}</td>`;
-                tCells += `<td contenteditable="true" data-kind="t" data-rater="${escapeHtml(r)}">${formatVal(sc.t)}</td>`;
+    function buildRowHtml(candidate = null, rowNumber = 1, cols = [], slots = MIN_SLOTS) {
+        const id = candidate ? candidate.id : '';
+        const name = candidate ? escapeHtml(candidate.name) : '';
+        let psychoCells = '';
+        let potentialCells = '';
+        const psychoValues = [];
+        const potentialValues = [];
+        for (let index = 0; index < slots; index++) {
+            const rater = cols[index];
+            if (rater) {
+                const score = (candidate && candidate.scores && candidate.scores[rater]) || {};
+                psychoValues.push(score.p);
+                potentialValues.push(score.t);
+                psychoCells += `<td contenteditable="true" data-kind="p" data-rater="${escapeHtml(rater)}">${formatVal(score.p)}</td>`;
+                potentialCells += `<td contenteditable="true" data-kind="t" data-rater="${escapeHtml(rater)}">${formatVal(score.t)}</td>`;
             } else {
-                pCells += '<td></td>'; tCells += '<td></td>';
+                psychoCells += '<td></td>';
+                potentialCells += '<td></td>';
             }
         }
-        const psychoAve = cand ? calculateAverage(...pVals) : '#DIV/0!';
-        const potentialAve = cand ? calculateAverage(...tVals) : '#DIV/0!';
+        const psychoAverage = candidate ? calculateAverage(...psychoValues) : '#DIV/0!';
+        const potentialAverage = candidate ? calculateAverage(...potentialValues) : '#DIV/0!';
         return `
             <tr data-id="${id}">
                 <td class="row-num-cell" onclick="handleRowDelete(this)"><span class="row-number">${rowNumber}</span><span class="delete-icon" title="Delete Row">×</span></td>
                 <td class="text-left" contenteditable="true" data-field="name">${name}</td>
-                ${pCells}
-                <td class="col-green-ave psycho-ave">${psychoAve}</td>
-                ${tCells}
-                <td class="col-yellow-ave potential-ave">${potentialAve}</td>
-                <td class="text-left remarks-cell" contenteditable="true" data-field="remarks">${remarks}</td>
+                ${psychoCells}
+                <td class="col-green-ave psycho-ave">${psychoAverage}</td>
+                ${potentialCells}
+                <td class="col-yellow-ave potential-ave">${potentialAverage}</td>
             </tr>
         `;
     }
 
-    function buildTableHeaderHtml(currentDate, branch, posKey, cols, slots, free) {
-        const raterHdr = () => {
-            let h = '';
-            for (let i = 0; i < slots; i++) {
-                if (cols[i]) h += `<th style="width: 62px;">${escapeHtml(cols[i])}<span class="rater-remove" data-rater="${escapeHtml(cols[i])}" title="Remove this column" onclick="removeRater(this)">×</span></th>`;
-                else h += '<th style="width: 62px;"></th>';
+    function buildTableHeaderHtml(currentDate, branch, position, cols, slots) {
+        const raterHeaders = () => {
+            let html = '';
+            for (let index = 0; index < slots; index++) {
+                if (cols[index]) html += `<th style="width: 62px;">${escapeHtml(cols[index])}<span class="rater-remove" data-rater="${escapeHtml(cols[index])}" title="Remove this column" onclick="removeRater(this)">×</span></th>`;
+                else html += '<th style="width: 62px;"></th>';
             }
-            return h;
+            return html;
         };
-        const totalCols = 2 + (slots + 1) * 2 + 1;
-        const escOffice = escapeHtml(branch).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const escPos = escapeHtml(posKey).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-
+        const totalCols = 2 + (slots + 1) * 2;
+        const escapedOffice = escapeHtml(branch).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const escapedPosition = escapeHtml(position).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         return `
             <tr>
                 <td colspan="3" class="text-left meta-row" contenteditable="true" data-field="interview_date" style="border-right: none;"><b>DATE OF INTERVIEW:</b> ${escapeHtml(currentDate)}</td>
-                <td colspan="${totalCols - 3}" class="position-cell" style="border-left: none;">
-                    POSITION TITLE: ${escapeHtml(posKey)}
-                    <button type="button" class="pos-delete-btn no-print" title="Delete this entire position table" onclick="deletePositionGroup(this, &quot;${escOffice}&quot;, &quot;${escPos}&quot;)">×</button>
-                </td>
+                <td colspan="${totalCols - 3}" class="position-cell" style="border-left: none;">POSITION TITLE: ${escapeHtml(position)}<button type="button" class="pos-delete-btn no-print" title="Delete this entire position table" onclick="deletePositionGroup(this, &quot;${escapedOffice}&quot;, &quot;${escapedPosition}&quot;)">×</button></td>
             </tr>
             <tr>
                 <th style="width: 30px;">${escapeHtml(headerLabels.hash)}</th>
                 <th style="width: 230px;" contenteditable="true" onblur="updateHeaderLabel(this,'name')">${escapeHtml(headerLabels.name)}</th>
-                ${raterHdr()}
+                ${raterHeaders()}
                 <th class="col-green-ave" style="width: 55px; border-left: 2px solid #000 !important;" contenteditable="true" onblur="updateHeaderLabel(this,'psychoAve')">${escapeHtml(headerLabels.psychoAve)}</th>
-                ${raterHdr()}
+                ${raterHeaders()}
                 <th class="col-yellow-ave" style="width: 55px; border-left: 2px solid #000 !important;" contenteditable="true" onblur="updateHeaderLabel(this,'potentialAve')">${escapeHtml(headerLabels.potentialAve)}</th>
-                <th rowspan="2" style="width: 160px;" contenteditable="true" onblur="updateHeaderLabel(this,'remarks')">${escapeHtml(headerLabels.remarks)}</th>
             </tr>
         `;
     }
-
     function buildTableBlockHtml(candidates, currentDate, branch, posKey) {
         const cols = raterColumns(candidates, blockKey(branch, posKey, currentDate), branch, posKey);
         const slots = Math.max(MIN_SLOTS, cols.length + 1);
@@ -555,7 +534,7 @@ foreach ($groupedCandidates as $officeKey => $list) {
                         if (!scores[r]) scores[r] = { p: null, t: null };
                         if (v !== '' && !isNaN(parseFloat(v))) scores[r][td.getAttribute('data-kind')] = parseFloat(v);
                     });
-                    out.push({ row, office, position, date, id, name, scores, remarks: (row.querySelector('[data-field="remarks"]')?.innerText || '').replace(/[\r\n\t]/g, ' ').trim() });
+                    out.push({ row, office, position, date, id, name, scores });
                 });
             });
         });
@@ -568,7 +547,7 @@ foreach ($groupedCandidates as $officeKey => $list) {
         const fresh = {};
         collectRows().forEach(r => {
             if (!(r.office in groupedData)) return;
-            (fresh[r.office] = fresh[r.office] || []).push({ id: r.id, name: r.name, position: r.position, office: r.office, date: r.date, remarks: r.remarks, scores: r.scores });
+            (fresh[r.office] = fresh[r.office] || []).push({ id: r.id, name: r.name, position: r.position, office: r.office, date: r.date, scores: r.scores });
         });
         containers.forEach(c => {
             const o = c.getAttribute('data-office');
@@ -795,7 +774,7 @@ foreach ($groupedCandidates as $officeKey => $list) {
         if (e) e.preventDefault();
         const candidatesToSave = collectRows().map((r, i) => {
             r.row.setAttribute('data-temp-index', i);
-            return { tempIndex: i, id: r.id, name: r.name, office: r.office, position: r.position, interviewDate: r.date, remarks: r.remarks, scores: r.scores };
+            return { tempIndex: i, id: r.id, name: r.name, office: r.office, position: r.position, interviewDate: r.date, scores: r.scores };
         });
 
         const columnsToSave = [];
@@ -837,8 +816,64 @@ foreach ($groupedCandidates as $officeKey => $list) {
         }).catch(err => alert('Save request failed: ' + err.message));
     }
 
+    function exportExcel() {
+        window.ResultsExcelExport.exportExcel({
+            XLSX: window.XLSX,
+            groupedData,
+            headerLabels,
+            raterColumns,
+            blockKey,
+            minSlots: MIN_SLOTS,
+            todayDate: "<?php echo date('F d, Y'); ?>",
+            syncFromDom
+        });
+    }
+
+    async function importExcel(file) {
+        syncFromDom();
+        if (window.ResultsExcelImportLoadError) throw new Error(window.ResultsExcelImportLoadError);
+        if (!window.ResultsExcelImport || typeof window.ResultsExcelImport.readWorkbook !== 'function') {
+            throw new Error('The import module did not initialize. Refresh the page and check the results_excel_import.js file.');
+        }
+        const { candidates, invalidScores } = await window.ResultsExcelImport.readWorkbook(
+            file,
+            groupedData,
+            "<?php echo date('F d, Y'); ?>",
+            activeTabOffice
+        );
+        candidates.forEach(candidate => {
+            if (candidate.id > 0) {
+                Object.keys(groupedData).forEach(branch => {
+                    groupedData[branch] = groupedData[branch].filter(existing => Number(existing.id) !== candidate.id);
+                });
+            }
+            if (!groupedData[candidate.office]) groupedData[candidate.office] = [];
+            groupedData[candidate.office].push(candidate);
+        });
+
+        skipNextSync = true;
+        activeTabOffice = Object.keys(groupedData).includes(activeTabOffice) ? activeTabOffice : Object.keys(groupedData)[0];
+        renderAll();
+        const scoreNotice = invalidScores.length ? ' Invalid score values were skipped on row(s): ' + [...new Set(invalidScores)].join(', ') + '.' : '';
+        alert(candidates.length + ' candidate row(s) imported. Review the results, then select Save All Changes to store them.' + scoreNotice);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         renderAll();
+        document.getElementById('exportExcelButton').addEventListener('click', exportExcel);
+        const importFile = document.getElementById('excelImportFile');
+        document.getElementById('importExcelButton').addEventListener('click', () => importFile.click());
+        importFile.addEventListener('change', async () => {
+            const file = importFile.files[0];
+            if (!file) return;
+            try {
+                await importExcel(file);
+            } catch (error) {
+                alert('Import failed: ' + error.message);
+            } finally {
+                importFile.value = '';
+            }
+        });
         document.getElementById('candidateSearch')?.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); searchCandidate(); } });
         document.addEventListener('input', function(e) {
             if (e.target.isContentEditable) {

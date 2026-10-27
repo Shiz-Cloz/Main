@@ -12,7 +12,7 @@ require_admin();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interview Scoring Sheets</title>
+    <title>Competency Templates</title>
     <style>
         :root {
             color-scheme: light;
@@ -170,7 +170,7 @@ require_admin();
 </nav>
 
 <main id="homeView">
-    <h1>Interview Scoring Sheets</h1>
+    <h1>Competency Templates</h1>
     <p>Manage shared competency forms. For example, set Basic forms to grades 0–17 and Advanced forms to 18–25. New forms stay private until you make them available to raters.</p>
     <p><a class="button primary" href="template_seed.php">Generate Regional Office Position Sheets</a></p>
     <div class="templates">

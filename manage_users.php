@@ -389,7 +389,6 @@ $csrf = csrf_token();
         <div class="nav no-print">
             <a href="results_2.php">&larr; Results</a>
             <a href="audit_viewer.php">Score Audit</a>
-            <a href="bulk_users.php">Bulk Users</a>
             <a href="logout.php">Log out (<?php echo h($_SESSION['username'] ?? ''); ?>)</a>
         </div>
     </div>
